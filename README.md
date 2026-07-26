@@ -2,29 +2,37 @@
 
 Un texte libre en entrée, du JSON propre et validé en sortie.
 
-Stack : Python + [pydantic](https://docs.pydantic.dev/) + [instructor](https://github.com/instructor-ai/instructor) + l'API Claude (Anthropic). Un seul script, un seul appel API, un schéma.
+Stack : Python + [pydantic](https://docs.pydantic.dev/) + [instructor](https://github.com/instructor-ai/instructor) + l'API Claude (Anthropic). Un seul fichier (`extract.py`), un seul appel API, un schéma — et le jeu d'évaluation embarqué dedans.
 
 ## Exemple
 
-Entrée (compte-rendu de match de rugby) :
+Entrée (`exemple.txt`) :
 
-> Dupont a marqué 2 essais, carton jaune à la 60e, Martin remplacé à la mi-temps...
+> Belle rencontre ce week-end : Dupont a marqué 2 essais, l'un en première mi-temps
+> et l'autre juste après la pause. Martin a été averti d'un carton jaune à la 60e minute
+> pour un plaquage haut. En seconde période, Lefèvre a été remplacé par Girard à la 55e minute,
+> et Martin lui-même a cédé sa place à Bernard à la 70e minute.
 
-Sortie :
+Sortie (`python extract.py exemple.txt`) :
 
 ```json
 {
   "essais": [{ "joueur": "Dupont", "nombre": 2 }],
   "cartons": [{ "joueur": "Martin", "type": "jaune", "minute": 60 }],
-  "remplacements": [{ "joueur_sortant": "Martin", "joueur_entrant": "...", "minute": 45 }]
+  "remplacements": [
+    { "joueur_sortant": "Lefèvre", "joueur_entrant": "Girard", "minute": 55 },
+    { "joueur_sortant": "Martin", "joueur_entrant": "Bernard", "minute": 70 }
+  ]
 }
 ```
 
-Le schéma de sortie est forcé via un modèle Pydantic (`CompteRendu` dans `extract.py`), donc le JSON produit est toujours valide et typé.
+Le schéma de sortie est forcé via des modèles Pydantic (`Essai`, `Carton`, `Remplacement`, `CompteRendu` dans `extract.py`), donc le JSON produit est toujours valide et typé.
 
 ## Installation
 
 ```bash
+python3 -m venv .venv
+source .venv/bin/activate
 pip install -r requirements.txt
 cp .env.example .env   # puis renseigner ANTHROPIC_API_KEY
 export ANTHROPIC_API_KEY=sk-ant-...
@@ -42,10 +50,6 @@ cat exemple.txt | python extract.py
 # Avec un autre modèle
 python extract.py exemple.txt --model claude-sonnet-5
 ```
-
-## Adapter à un autre domaine
-
-Le schéma (`essais` / `cartons` / `remplacements`) est spécifique au rugby, à titre d'exemple. Pour l'adapter à une autre source de texte, il suffit de modifier les classes Pydantic dans `extract.py` — le reste du script (appel API, validation, sortie JSON) ne change pas.
 
 ## Évaluation
 
@@ -68,3 +72,20 @@ Deux niveaux de mesure sont reportés :
 Cette séparation détection / attributs est ce qui distingue la conformité au schéma (toujours garantie par `instructor`) de la justesse du contenu (ce que l'éval mesure réellement).
 
 Pour ajouter des cas de test, complétez la liste `JEU_EVALUATION` en haut du script.
+
+## Adapter à un autre domaine
+
+Le schéma (`essais` / `cartons` / `remplacements`) est spécifique au rugby, à titre d'exemple. Pour l'adapter à une autre source de texte :
+
+1. Modifiez les classes Pydantic dans `extract.py` (le reste — appel API, validation, sortie JSON — ne change pas).
+2. Mettez à jour le prompt dans `extract()` si le nouveau schéma a ses propres conventions à préciser (ex. comment représenter un cas ambigu).
+3. Remplacez le contenu de `JEU_EVALUATION` par des cas annotés pour le nouveau domaine — `CLES` et `ATTRS` définissent comment les événements sont appariés et quels attributs sont vérifiés ; adaptez-les si les noms de champs changent.
+
+## Structure du projet
+
+```
+extract.py       # schéma, extraction, jeu d'évaluation et scorer — tout est ici
+requirements.txt # anthropic, instructor, pydantic
+exemple.txt      # texte d'exemple pour tester rapidement
+.env.example     # variable d'environnement attendue (ANTHROPIC_API_KEY)
+```
