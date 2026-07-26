@@ -49,19 +49,15 @@ Le schéma (`essais` / `cartons` / `remplacements`) est spécifique au rugby, à
 
 ## Évaluation
 
-`jeu_evaluation.jsonl` contient 14 comptes-rendus annotés à la main (sortie attendue), couvrant les cas qui font trébucher un extracteur : cas vierge (aucun événement), doublé, carton rouge vs jaune, remplacement sur blessure sans entrant connu, essai de pénalité, accents, distracteurs (joueurs cités sans action).
-
-`evaluer.py` (sans dépendance, stdlib pure) mesure la performance de l'extracteur en comparant sa sortie au gold :
+Le jeu d'évaluation (14 comptes-rendus annotés à la main) et le scorer sont embarqués directement dans `extract.py` — pas de fichier séparé. Les cas couvrent ce qui fait trébucher un extracteur : cas vierge (aucun événement), doublé, carton rouge vs jaune, remplacement sur blessure sans entrant connu, essai de pénalité, accents, distracteurs (joueurs cités sans action).
 
 ```bash
 # Score l'extracteur en conditions réelles (appelle l'API)
-python evaluer.py --extracteur extract:extract
+python extract.py --evaluer
 
-# Vérifie que le scorer lui-même est correct (doit donner 100 % partout)
-python evaluer.py --oracle
-
-# Score des prédictions déjà générées, sans rappeler l'API
-python evaluer.py --predictions mes_predictions.jsonl
+# Vérifie que le scorer lui-même est correct (prediction = gold, doit donner
+# 100 % partout — aucun appel API)
+python extract.py --oracle
 ```
 
 Deux niveaux de mesure sont reportés :
@@ -70,3 +66,5 @@ Deux niveaux de mesure sont reportés :
 - **Taux de comptes-rendus entièrement corrects** — proportion de CR parfaits de bout en bout.
 
 Cette séparation détection / attributs est ce qui distingue la conformité au schéma (toujours garantie par `instructor`) de la justesse du contenu (ce que l'éval mesure réellement).
+
+Pour ajouter des cas de test, complétez la liste `JEU_EVALUATION` en haut du script.
