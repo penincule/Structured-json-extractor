@@ -73,14 +73,6 @@ Cette séparation détection / attributs est ce qui distingue la conformité au 
 
 Pour ajouter des cas de test, complétez la liste `JEU_EVALUATION` en haut du script.
 
-## Adapter à un autre domaine
-
-Le schéma (`essais` / `cartons` / `remplacements`) est spécifique au rugby, à titre d'exemple. Pour l'adapter à une autre source de texte :
-
-1. Modifiez les classes Pydantic dans `extract.py` (le reste — appel API, validation, sortie JSON — ne change pas).
-2. Mettez à jour le prompt dans `extract()` si le nouveau schéma a ses propres conventions à préciser (ex. comment représenter un cas ambigu).
-3. Remplacez le contenu de `JEU_EVALUATION` par des cas annotés pour le nouveau domaine — `CLES` et `ATTRS` définissent comment les événements sont appariés et quels attributs sont vérifiés ; adaptez-les si les noms de champs changent.
-
 ## Structure du projet
 
 ```
