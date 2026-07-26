@@ -13,8 +13,14 @@ from pydantic import BaseModel, Field
 
 
 class Essai(BaseModel):
-    joueur: str = Field(description="Nom du joueur ayant marqué")
-    nombre: int = Field(description="Nombre d'essais marqués par ce joueur")
+    joueur: str = Field(
+        description=(
+            "Nom du joueur ayant marqué. Pour un essai de pénalité (aucun "
+            "buteur nommé), utiliser 'essai de pénalité'."
+        )
+    )
+    nombre: int = Field(description="Nombre d'essais marqués par ce joueur dans cet extrait")
+    minute: int | None = Field(default=None, description="Minute de l'essai, si mentionnée")
 
 
 class Carton(BaseModel):
@@ -25,8 +31,14 @@ class Carton(BaseModel):
 
 class Remplacement(BaseModel):
     joueur_sortant: str
-    joueur_entrant: str
-    minute: int | None = Field(default=None, description="Minute du remplacement, si mentionnée")
+    joueur_entrant: str | None = Field(
+        default=None,
+        description="Nom du joueur entrant, ou null si non mentionné (ex: sortie sur blessure)",
+    )
+    minute: int | None = Field(
+        default=None,
+        description="Minute du remplacement, si mentionnée. La mi-temps correspond à la minute 40.",
+    )
 
 
 class CompteRendu(BaseModel):
@@ -46,7 +58,13 @@ def extract(texte: str, model: str = "claude-opus-5") -> CompteRendu:
                 "role": "user",
                 "content": (
                     "Extrais les informations structurées de ce compte-rendu de match "
-                    f"de rugby :\n\n{texte}"
+                    "de rugby. Conventions : la mi-temps correspond à la minute 40 ; "
+                    "un essai de pénalité (sans buteur nommé) est un essai dont le "
+                    "joueur est 'essai de pénalité' ; un joueur cité sans action "
+                    "(essai, carton, remplacement) ne doit apparaître dans aucune "
+                    "liste ; si aucun événement de ce type n'est mentionné, renvoyer "
+                    "une liste vide plutôt que d'en inventer un.\n\n"
+                    f"Compte-rendu :\n{texte}"
                 ),
             }
         ],
